@@ -1,0 +1,11 @@
+# Compiled Python files
+*.pyc
+__pycache__/
+
+# Logs and databases
+*.log
+*.sqlite3
+
+# Virtual environment
+venv/
+scrap_env/
