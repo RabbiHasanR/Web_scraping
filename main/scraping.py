@@ -1,4 +1,5 @@
 import asyncio
+import aiohttp
 import requests
 from requests_html import HTMLSession, AsyncHTMLSession
 from bs4 import BeautifulSoup
@@ -13,11 +14,14 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
 
+
+
+
 class ProductDetailPage:
 
-    def __init__(self, soup, url) -> None:
+    def __init__(self, soup) -> None:
         self.soup = soup
-        self.url = url
+        self.url = 'https://shop.adidas.jp/'
 
     
     def get_breadcrumb_category(self):
@@ -167,41 +171,64 @@ class ProductDetailPage:
         data = {}
         data['breadcrumb_category'] = self.get_breadcrumb_category()
         data['product_images_urls'] = self.get_product_images_urls()
-        data['product_info'] = self.get_product_info()
-        data['cordinate_product_info'] = self.get_cordinate_product_info()
-        data['description'] = self.get_description()
-        data['size_chart'] = self.get_size_chart()
-        data['review_info'] = self.get_product_review_info()
-        data['user_reviews'] = self.get_users_reviews()
-        data['keywords'] = self.get_keywords()
+        # data['product_info'] = self.get_product_info()
+        # data['cordinate_product_info'] = self.get_cordinate_product_info()
+        # data['description'] = self.get_description()
+        # data['size_chart'] = self.get_size_chart()
+        # data['review_info'] = self.get_product_review_info()
+        # data['user_reviews'] = self.get_users_reviews()
+        # data['keywords'] = self.get_keywords()
 
         return data
 
 
 
 
-def get_page_source(url):
-    ua = UserAgent()
-    user_agent = ua.random
-    options = Options()
-    options.add_argument(f'user-agent={user_agent}')
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.get(url)
-    return driver.page_source
+# def get_page_source(url):
+#     ua = UserAgent()
+#     user_agent = ua.random
+#     options = Options()
+#     options.add_argument(f'user-agent={user_agent}')
+#     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+#     driver.get(url)
+#     return driver.page_source
 
 
 
-async def scrape_url(url):
-    # page_source = await loop.run_in_executor(None, get_page_source, url)
-    # print(type(page_source))
-    with open('page.txt', 'r') as f:
-        contents = f.read()
-        soup = BeautifulSoup(contents, 'html.parser')
-        product_deatil_page = ProductDetailPage(soup, url)
-        print(product_deatil_page.get_all_data())
+# async def scrape_url(url):
+#     # page_source = await loop.run_in_executor(None, get_page_source, url)
+#     # print(type(page_source))
+#     with open('page.txt', 'r') as f:
+#         contents = f.read()
+#         soup = BeautifulSoup(contents, 'html.parser')
+#         product_deatil_page = ProductDetailPage(soup, url)
+#         print(product_deatil_page.get_all_data())
 
-async def main():
-    urls = [
+# async def main():
+    # urls = [
+    #         'https://shop.adidas.jp/products/H03740/', 
+    #         'https://shop.adidas.jp/products/HB9386/',
+    #         'https://shop.adidas.jp/products/B75806/', 
+    #         'https://shop.adidas.jp/products/B75807/',
+    #         'https://shop.adidas.jp/products/GW6173/',
+    #         'https://shop.adidas.jp/products/IE9541/',
+    #         'https://shop.adidas.jp/products/FZ6364/',
+    #         'https://shop.adidas.jp/products/FZ6389/',
+    #         'https://shop.adidas.jp/products/GW6173/',
+    #         'https://shop.adidas.jp/products/ID4121/',
+    #         'https://shop.adidas.jp/products/HQ8930/'
+    #     ]
+#     tasks = []
+#     for url in urls:
+#         task = asyncio.create_task(scrape_url(url))
+#         tasks.append(task)
+#     await asyncio.gather(*tasks)
+
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(main())
+
+
+urls = [
             # 'https://shop.adidas.jp/products/H03740/', 
             'https://shop.adidas.jp/products/HB9386/',
             # 'https://shop.adidas.jp/products/B75806/', 
@@ -214,14 +241,136 @@ async def main():
             # 'https://shop.adidas.jp/products/ID4121/',
             # 'https://shop.adidas.jp/products/HQ8930/'
         ]
-    tasks = []
-    for url in urls:
-        task = asyncio.create_task(scrape_url(url))
-        tasks.append(task)
-    await asyncio.gather(*tasks)
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
+def find_category(driver):
+    try:
+        categories_lis = WebDriverWait(driver, 1).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'li.breadcrumbListItem'))
+            )
+        categories = [li.text for li in categories_lis]
+        return categories
+    except TimeoutException:
+        return []
+
+def find_product_images_urls(driver):
+    try:
+        img_tags = WebDriverWait(driver, 1).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'img.test-main_image'))
+            )
+        images_urls = [img_tag.get_attribute('src') for img_tag in img_tags]
+        return images_urls
+    except TimeoutException:
+        return []
+    
+def find_cordinate_products(driver):
+    try:
+        cordinate_divs = WebDriverWait(driver, 10).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div.test-coordinate_item_tile'))
+            )
+        cordinate_products = []
+        for cordinate_div in cordinate_divs:
+            WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable(cordinate_div)
+            )
+            cordinate_div.click()
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, ' div.coordinate_item_container.test-coordinate_item_container.add-open'))
+            )
+            product_page_src = driver.find_element(By.CSS_SELECTOR, 'div.coordinate_item_container.test-coordinate_item_container.add-open > div > div.detail > div.image_wrapper > a').get_attribute('href')
+            product_image_url = driver.find_element(By.CSS_SELECTOR, 'img.coordinate_item_image').get_attribute('src')
+            product_name = driver.find_element(By.CSS_SELECTOR, 'span.titleWrapper').text
+            product_price = driver.find_element(By.CSS_SELECTOR, 'div.coordinate_item_container.test-coordinate_item_container.add-open > div > div.detail > div.info_wrapper > div.mdl-price.test-Type2.css-izzs0m > p > span').text
+            cordinate_products.append(
+                {
+                    'product_page_src': product_page_src,
+                    'product_image_url': product_image_url,
+                    'product_name': product_name,
+                    'product_price': product_price
+                }
+            )
+
+        return cordinate_products
+    except TimeoutException:
+        return []
+    
+def find_product_info(driver):
+    try:
+        product_info_div = WebDriverWait(driver, 1).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div.articlePurchaseBox.css-gxzada'))
+            )
+        product = {}
+
+        product['category_name'] = driver.find_element(By.CSS_SELECTOR, 'div.articlePurchaseBox.css-gxzada > div.articleInformation.css-itvqo3 > div.articleNameHeader.css-t1z1wj > a > span').text
+        product['name'] = driver.find_element(By.CSS_SELECTOR, 'div.articlePurchaseBox.css-gxzada > div.articleInformation.css-itvqo3 > div.articleNameHeader.css-t1z1wj > h1').text
+        product['price'] = driver.find_element(By.CSS_SELECTOR, 'div.articleInformation.css-itvqo3 > div.articlePrice.test-articlePrice.css-1apqb46 > p.price-text.test-price-text.mod-flat > span').text
+        try:
+            size_buttons = WebDriverWait(driver, 1).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'ul > li.sizeSelectorListItem> button'))
+            )
+            product['sizes'] = [button.text for button in size_buttons]
+            return product
+        except TimeoutException:
+            return product
+    except TimeoutException:
+        return []
+
+def find_description(driver):
+    pass
+
+async def fetch_page_source_and_click_button(url):
+    """Fetches the pagesource for a given URL and clicks a specific button"""
+    ua = UserAgent()
+    user_agent = ua.random
+    options = Options()
+    options.add_argument(f'user-agent={user_agent}')
+    # options.add_argument('--headless')
+    # options.add_argument('--disable-gpu')
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)  # create a new webdriver instance for each URL
+    driver.get(url)
+    result = {}
+    # find and click a specific button on the page
+    result['breadcrumb_category'] = find_category(driver)
+    result['product_images_urls'] = find_product_images_urls(driver)
+    # result['cordinate_products'] = find_cordinate_products(driver)
+    result['product_info'] = find_product_info(driver)
+        
+    # pagesource = driver.page_source
+    driver.quit()
+    return result
+
+async def get_multiple_pagesources_and_click_button():
+    """Fetches pagesources for multiple URLs and clicks a specific button concurrently"""
+    async with aiohttp.ClientSession() as session:
+        tasks = [asyncio.ensure_future(fetch_page_source_and_click_button(url)) for url in urls]
+        pagesources = await asyncio.gather(*tasks)
+        # soup = BeautifulSoup(pagesources, 'html.parser')
+        # product_deatil_page = ProductDetailPage(soup)
+        # result = product_deatil_page.get_all_data()
+        # print('result:', result)
+        # return result
+        return pagesources
+
+async def scrape_file(pagesource):
+    """Scrape a single HTML file and return the parsed BeautifulSoup object"""
+    soup = BeautifulSoup(pagesource, 'html.parser')
+    product_deatil_page = ProductDetailPage(soup)
+    result = product_deatil_page.get_all_data()
+    return result
+
+async def scrape_files(pagesources):
+    """Scrape multiple HTML files concurrently and return a list of parsed BeautifulSoup objects"""
+    tasks = [asyncio.ensure_future(scrape_file(pagesource)) for pagesource in pagesources]
+    soup_list = await asyncio.gather(*tasks)
+    return soup_list
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    pagesources = loop.run_until_complete(get_multiple_pagesources_and_click_button())
+    print('results:', pagesources)
+    # if pagesources:
+    #     soup_list = loop.run_until_complete(scrape_files(pagesources))
+    #     print('final result:', soup_list)
+
 
 
 

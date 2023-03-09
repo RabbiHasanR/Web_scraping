@@ -101,7 +101,6 @@ cordinate_product.click()
 
 
 
-
 # locate a button
 # all_matches_button = driver.find_element(By.XPATH, '//label[@analytics-event="All matches"]')
 # size_table = driver.find_element(By.XPATH, '//div[@data-gtm-vis-recent-on-screen-219692_603="18573"]')
