@@ -171,13 +171,13 @@ class ProductDetailPage:
         data = {}
         data['breadcrumb_category'] = self.get_breadcrumb_category()
         data['product_images_urls'] = self.get_product_images_urls()
-        # data['product_info'] = self.get_product_info()
+        data['product_info'] = self.get_product_info()
         # data['cordinate_product_info'] = self.get_cordinate_product_info()
-        # data['description'] = self.get_description()
-        # data['size_chart'] = self.get_size_chart()
-        # data['review_info'] = self.get_product_review_info()
-        # data['user_reviews'] = self.get_users_reviews()
-        # data['keywords'] = self.get_keywords()
+        data['description'] = self.get_description()
+        data['size_chart'] = self.get_size_chart()
+        data['review_info'] = self.get_product_review_info()
+        data['user_reviews'] = self.get_users_reviews()
+        data['keywords'] = self.get_keywords()
 
         return data
 
@@ -244,7 +244,7 @@ urls = [
 
 def find_category(driver):
     try:
-        categories_lis = WebDriverWait(driver, 1).until(
+        categories_lis = WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'li.breadcrumbListItem'))
             )
         categories = [li.text for li in categories_lis]
@@ -254,7 +254,7 @@ def find_category(driver):
 
 def find_product_images_urls(driver):
     try:
-        img_tags = WebDriverWait(driver, 1).until(
+        img_tags = WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'img.test-main_image'))
             )
         images_urls = [img_tag.get_attribute('src') for img_tag in img_tags]
@@ -295,16 +295,24 @@ def find_cordinate_products(driver):
     
 def find_product_info(driver):
     try:
-        product_info_div = WebDriverWait(driver, 1).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'div.articlePurchaseBox.css-gxzada'))
+        category_name = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div.articlePurchaseBox.css-gxzada > div.articleInformation.css-itvqo3 > div.articleNameHeader.css-t1z1wj > a > span'))
+            )
+        
+        name = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div.articlePurchaseBox.css-gxzada > div.articleInformation.css-itvqo3 > div.articleNameHeader.css-t1z1wj > h1'))
+            )
+        
+        price = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div.articleInformation.css-itvqo3 > div.articlePrice.test-articlePrice.css-1apqb46 > p.price-text.test-price-text.mod-flat > span'))
             )
         product = {}
 
-        product['category_name'] = driver.find_element(By.CSS_SELECTOR, 'div.articlePurchaseBox.css-gxzada > div.articleInformation.css-itvqo3 > div.articleNameHeader.css-t1z1wj > a > span').text
-        product['name'] = driver.find_element(By.CSS_SELECTOR, 'div.articlePurchaseBox.css-gxzada > div.articleInformation.css-itvqo3 > div.articleNameHeader.css-t1z1wj > h1').text
-        product['price'] = driver.find_element(By.CSS_SELECTOR, 'div.articleInformation.css-itvqo3 > div.articlePrice.test-articlePrice.css-1apqb46 > p.price-text.test-price-text.mod-flat > span').text
+        product['category_name'] = category_name.text
+        product['name'] = name.text
+        product['price'] = price.text
         try:
-            size_buttons = WebDriverWait(driver, 1).until(
+            size_buttons = WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'ul > li.sizeSelectorListItem> button'))
             )
             product['sizes'] = [button.text for button in size_buttons]
@@ -312,10 +320,82 @@ def find_product_info(driver):
         except TimeoutException:
             return product
     except TimeoutException:
-        return []
+        return {}
 
 def find_description(driver):
-    pass
+    try:
+        description_div = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, 'div.js-componentsTabTarget.js-articlePromotion.add-close.css-62zuw8'))
+                )
+        descritpion = {}
+        descritpion['title'] = driver.find_element(By.CSS_SELECTOR, 'div.js-componentsTabTarget.js-articlePromotion.add-close.css-62zuw8 > div > h4').text
+        descritpion['general_description'] = driver.find_element(By.CSS_SELECTOR, 'div.commentItem-mainText.test-commentItem-mainText').text
+        itemization_lis = driver.find_elements(By.CSS_SELECTOR, 'ul > li.articleFeaturesItem')
+        descritpion['itemization_descriptions'] = [li.text for li in itemization_lis]
+        return descritpion
+    except TimeoutException:
+        return {}
+    
+def find_size_table_chart(driver):
+    try:
+        print('find size table')
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        print('now bottom to top')
+        driver.execute_script("window.scrollTo(0, 0);")
+        size_table_div = WebDriverWait(driver, 3).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, 'div.sizeDescription.section.css-w0j2zy'))
+                )
+        size_items_ths = driver.find_elements(By.CSS_SELECTOR, 'table:nth-child(1) > thead > tr > th')
+        size_items = [th.text for th in size_items_ths if th.text]
+        size_names_tds = driver.find_elements(By.CSS_SELECTOR, 'table:nth-child(2) > tbody > tr:nth-child(1) > td')
+        size_names = [td.text for td in size_names_tds if td.text]
+        table_trs = driver.find_elements(By.CSS_SELECTOR, 'div > table:nth-child(2) > tbody > tr')
+        table_trs.pop(0)
+
+        size_chart = {}
+        count = 0
+        while count < len(size_items) and count < len(table_trs):
+            value = size_items[count].text
+            values_span = table_trs[count].find_elements(By.CSS_SELECTOR, 'td > span')
+            values = [span.text for span in values_span]
+            size_chart[value] = dict(zip(size_names, values))
+
+            count += 1
+        return size_chart
+    except TimeoutException:
+        return {}
+
+def find_review_info(driver):
+    try:
+        rating_span = WebDriverWait(driver, 2).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, '#BVRRRatingOverall_ > div.BVRRRatingNormalOutOf > span.BVRRNumber.BVRRRatingNumber'))
+                    )
+        total_review_span = WebDriverWait(driver, 2).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, 'span.BVRRValue.BVRRBuyAgain > span.BVRRNumber.BVRRBuyAgainTotal'))
+                    )
+        recommended_span = WebDriverWait(driver, 2).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, 'div.BVRRRatingPercentage > span.BVRRBuyAgainPercentage > span'))
+                    )
+        review_rating_of_each_item_imgs = WebDriverWait(driver, 2).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, 'div.BVRRSecondaryRatingsContainer > div.BVRRRatingContainerRadio > div.BVRRCustomRatingEntryWrapper > div.BVRRRatingEntry > div.BVRRRatingRadio > div.BVRRRatingRadioImage > img'))
+                    )
+        items_sence = [img.get_attribute('title') for img in review_rating_of_each_item_imgs]
+        print('review info:',rating_span, total_review_span, recommended_span, items_sence)
+        review_info = {}
+        review_info['rating'] = rating_span.text
+        review_info['number_of_review'] = total_review_span.text
+        review_info['recommended_rate'] = recommended_span.text
+        review_info['items_sence'] = items_sence
+        return review_info
+    except TimeoutException as e:
+        print('TimeoutException:', e)
+        return {}
+    except Exception as e:
+        print('exceptioN:', e)
+        return {}
+    
+
+# async 
 
 async def fetch_page_source_and_click_button(url):
     """Fetches the pagesource for a given URL and clicks a specific button"""
@@ -323,31 +403,36 @@ async def fetch_page_source_and_click_button(url):
     user_agent = ua.random
     options = Options()
     options.add_argument(f'user-agent={user_agent}')
+    # options.add_argument("--kiosk")
+    options.add_argument("--start-maximized")
     # options.add_argument('--headless')
     # options.add_argument('--disable-gpu')
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)  # create a new webdriver instance for each URL
+    driver.implicitly_wait(1)
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    driver.execute_script("window.scrollTo(0, 0);")
     driver.get(url)
-    result = {}
+
+    # result = {}
+    # print('start')
     # find and click a specific button on the page
-    result['breadcrumb_category'] = find_category(driver)
-    result['product_images_urls'] = find_product_images_urls(driver)
+    # result['breadcrumb_category'] = find_category(driver)
+    # result['product_images_urls'] = find_product_images_urls(driver)
     # result['cordinate_products'] = find_cordinate_products(driver)
-    result['product_info'] = find_product_info(driver)
+    # result['product_info'] = find_product_info(driver)
+    # result['description'] = find_description(driver)
+    # result['size_chart'] = find_size_table_chart(driver)
+    # result['review_info'] = find_review_info(driver)
         
-    # pagesource = driver.page_source
+    pagesource = driver.page_source
     driver.quit()
-    return result
+    return pagesource
 
 async def get_multiple_pagesources_and_click_button():
     """Fetches pagesources for multiple URLs and clicks a specific button concurrently"""
     async with aiohttp.ClientSession() as session:
         tasks = [asyncio.ensure_future(fetch_page_source_and_click_button(url)) for url in urls]
         pagesources = await asyncio.gather(*tasks)
-        # soup = BeautifulSoup(pagesources, 'html.parser')
-        # product_deatil_page = ProductDetailPage(soup)
-        # result = product_deatil_page.get_all_data()
-        # print('result:', result)
-        # return result
         return pagesources
 
 async def scrape_file(pagesource):
@@ -366,10 +451,11 @@ async def scrape_files(pagesources):
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     pagesources = loop.run_until_complete(get_multiple_pagesources_and_click_button())
-    print('results:', pagesources)
-    # if pagesources:
-    #     soup_list = loop.run_until_complete(scrape_files(pagesources))
-    #     print('final result:', soup_list)
+    # print('results:', pagesources)
+    if pagesources:
+        soup_list = loop.run_until_complete(scrape_files(pagesources))
+        print('final result:', soup_list)
+
 
 
 
