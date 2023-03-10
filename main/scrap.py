@@ -17,6 +17,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
 
 
 
@@ -134,7 +135,38 @@ class ProductDetailPage:
         
 
     def get_special_function(self):
-        pass
+        divs = self.soup.find_all('div', class_="contents clearfix")
+        if divs:
+            special_functions = []
+            for div in divs:
+                page_link = image_link = title = description = None
+                page_link_div = div.find('div', class_="item_part illustration")
+                if page_link_div:
+                    page_link_a = page_link_div.find('a')
+                    if page_link_a:
+                        page_link = requests.compat.urljoin(self.url, page_link_a.get('href')) 
+                    image_link_img = page_link_div.find('img', class_="illustrationBody")
+                    if image_link_img:
+                        image_link = image_link_img.get('src')
+                
+                title_a = div.find('a', class_="tecTextTitle")
+                if title_a:
+                    title = str(title_a.get_text())
+                
+                description_div = div.find('div', class_="item_part details")
+                if description_div:
+                    description = description_div.get_text()
+                
+                special_functions.append(
+                    {
+                        'page_link': page_link,
+                        'image_link': image_link,
+                        'title': title,
+                        'description': description
+                    }
+                )
+            return special_functions
+        return []
 
     def get_product_review_info(self):
         div = self.soup.find('div', class_="BVRRQuickTakeCustomWrapper")
@@ -212,6 +244,7 @@ class ProductDetailPage:
         data['product_images_urls'] = self.get_product_images_urls()
         data['product_info'] = self.get_product_info()
         data['description'] = self.get_description()
+        data['special_functions'] = self.get_special_function()
         data['size_chart'] = self.get_size_chart()
         data['review_info'] = self.get_product_review_info()
         data['user_reviews'] = self.get_users_reviews()
@@ -221,19 +254,48 @@ class ProductDetailPage:
     
 
 
+reviews_and_size_chart_urls = [
+    'https://shop.adidas.jp/products/HK7339/',
+    'https://shop.adidas.jp/products/IA6340/',
+    'https://shop.adidas.jp/products/HY2729/',
+    'https://shop.adidas.jp/products/HH9430/'
+]
+
+reviews_with_button = [
+    'https://shop.adidas.jp/products/GZ5891/',
+    'https://shop.adidas.jp/products/GZ5896/'
+]
+
+special_function = [
+    'https://shop.adidas.jp/products/GZ3774/',
+    'https://shop.adidas.jp/products/GZ3779/'
+]
+
 urls = [
-            'https://shop.adidas.jp/products/H03740/', 
-            'https://shop.adidas.jp/products/HB9386/',
-            'https://shop.adidas.jp/products/GV6905/'
-            'https://shop.adidas.jp/products/B75806/', 
-            'https://shop.adidas.jp/products/B75807/',
-            'https://shop.adidas.jp/products/GW6173/',
-            'https://shop.adidas.jp/products/IE9541/',
-            'https://shop.adidas.jp/products/FZ6364/',
-            'https://shop.adidas.jp/products/FZ6389/',
-            'https://shop.adidas.jp/products/GW6173/',
-            'https://shop.adidas.jp/products/ID4121/',
-            'https://shop.adidas.jp/products/HQ8930/'
+            'https://shop.adidas.jp/products/HK7339/',
+
+
+            # 'https://shop.adidas.jp/products/H03740/', 
+            # 'https://shop.adidas.jp/products/HB9386/',
+
+            # 'https://shop.adidas.jp/products/HB9386/',
+
+            # 'https://shop.adidas.jp/products/HQ6900/',
+
+            # 'https://shop.adidas.jp/products/EG1758/'
+
+
+
+            # 'https://shop.adidas.jp/products/GV6905/'
+            # 'https://shop.adidas.jp/products/B75806/', 
+            # 'https://shop.adidas.jp/products/B75807/',
+            # 'https://shop.adidas.jp/products/GW6173/',
+            # 'https://shop.adidas.jp/products/IE9541/',
+            # 'https://shop.adidas.jp/products/FZ6364/',
+            # 'https://shop.adidas.jp/products/FZ6389/',
+            # 'https://shop.adidas.jp/products/GW6173/',
+            # 'https://shop.adidas.jp/products/ID4121/',
+            # 'https://shop.adidas.jp/products/HQ8930/'
         ]
 
 
@@ -270,7 +332,7 @@ def write_in_spreadsheet(soup_list):
     # data = json.loads(soup_list)
     df = pd.DataFrame(soup_list)
     # df = df.set_index('url')
-    df.to_excel('final_scrap_data_two.xlsx', index=False)
+    df.to_excel('single_page.xlsx', index=False)
         
 
 # async 
@@ -287,13 +349,10 @@ async def fetch_page_source(url):
     driver.get(url)
     cordinate_products = find_cordinate_products(driver)
     page_info = {'url': url, 'cordinate_products': cordinate_products}
-    action = ActionChains(driver)
     try:
-        smart_table_div = driver.find_element(By.CSS_SELECTOR, 'vs-placeholder-smart-table css-iqoq9n')
-        action.move_to_element(smart_table_div).perform()
-        review_container_div = driver.find_element(By.CSS_SELECTOR, 'div.set-pdp-bv_container.css-0')
-        action.move_to_element(review_container_div).perform()
-        time.sleep(1)
+        body = driver.find_element(By.TAG_NAME,"body")
+        body.send_keys(Keys.END)
+        time.sleep(10)
     except NoSuchElementException as e:
         pass
 
@@ -306,6 +365,14 @@ async def fetch_page_source(url):
         review_component = WebDriverWait(driver, 3).until(
             EC.presence_of_element_located((By.ID, 'BVRRDisplayContentID'))
         )
+
+        # for relaod reviews
+        
+        # reviews_reload_button = WebDriverWait(driver, 1).until(
+        #         EC.presence_of_all_elements_located((By.CSS_SELECTOR, '//*[@id="BVRRDisplayContentFooterID"]/div/a'))
+        #     ) 
+        # reviews_reload_button.click()
+
         pagesource = driver.page_source
         driver.quit()
         page_info['pagesource'] = pagesource
@@ -357,7 +424,7 @@ if __name__ == '__main__':
     if pagesources:
         results = loop.run_until_complete(scrape_files(pagesources))
         json_string = json.dumps(results)
-        with open('final_multiple_url_result_two_three.txt', 'w') as f:
+        with open('single_page.txt', 'w') as f:
             f.write(json_string)
 
         write_in_spreadsheet(results)
