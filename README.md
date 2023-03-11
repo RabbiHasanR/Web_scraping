@@ -2,8 +2,8 @@
 
 This project is a web scraper that uses Selenium, Python, BeautifulSoup, and Chromium to extract data from websites. It is designed to help automate the process of collecting data from web pages. My Targeting Website is:
 
-[https://shop.adidas.jp/men/](https://shop.adidas.jp/men/)  **Porduct Navigate Page**
-[https://shop.adidas.jp/products/HB9386/](https://shop.adidas.jp/products/HB9386/)  **Porduct Details Page**
+* [https://shop.adidas.jp/men/](https://shop.adidas.jp/men/)  **Porduct Navigate Page**
+* [https://shop.adidas.jp/products/HB9386/](https://shop.adidas.jp/products/HB9386/)  **Porduct Details Page**
 
 
 # Task List
