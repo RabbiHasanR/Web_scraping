@@ -61,7 +61,7 @@ This project is a web scraper that uses Selenium, Python, BeautifulSoup, and Chr
 * `main/product_details_page.py` collect product details page data.
 * `main/main.py` run scraper
 
-# Challenges Facing
+# Limitations
 
 * When scraping multiple url concurrently it takes too much time.
 * If the internet is slow, then clicking doesn't work and the full page doesn't load properly.
