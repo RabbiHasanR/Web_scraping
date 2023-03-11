@@ -112,44 +112,48 @@ class Main:
 
 
 
+def single_product_scrap():
+    while True:
+        url = input("Enter a URL(product deatil page): ")
+        parsed_url = urlparse(url)
+        if parsed_url.scheme and parsed_url.netloc:
+            start_time = time.time()
+            print('start time:', start_time)
+            main = Main(True, url)
+            main.run()
+            end_time = time.time()
+            print('end time:', end_time)
+            execution_time = end_time - start_time
+            print('successfully scrap and save data in spreadsheet')
+            print(f"Execution time: {execution_time:.2f} seconds")
+            break
+        else:
+            print("Invalid URL. Please enter a valid URL.")
+
+def multiple_product_scrap():
+    while True:
+        try:
+            user_input = input("Enter an max count: ")
+            max_count = int(user_input)
+            start_time = time.time()
+            print('start time:', start_time)
+            main = Main(False, max_count=max_count)
+            main.run()
+            end_time = time.time()
+            print('end time:', end_time)
+            execution_time = end_time - start_time
+            print('successfully scrap and save data in spreadsheet')
+            print(f"Execution time: {execution_time:.2f} seconds")
+            break
+        except ValueError:
+            print("Error: please enter an integer")
+
 if __name__ == '__main__':
     while True:
         answer = input("Do you want to scrap single product info? (y/n): ")
         if answer.lower() == 'y':
-            while True:
-                url = input("Enter a URL(product deatil page): ")
-                parsed_url = urlparse(url)
-                if parsed_url.scheme and parsed_url.netloc:
-                    start_time = time.time()
-                    print('start time:', start_time)
-                    main = Main(True, url)
-                    main.run()
-                    end_time = time.time()
-                    print('end time:', end_time)
-                    execution_time = end_time - start_time
-                    print('successfully scrap and save data in spreadsheet')
-                    print(f"Execution time: {execution_time:.2f} seconds")
-                    break
-                else:
-                    print("Invalid URL. Please enter a valid URL.")
+            single_product_scrap()
         elif answer.lower() == 'n':
-            while True:
-                try:
-                    user_input = input("Enter an max count: ")
-                    max_count = int(user_input)
-                    start_time = time.time()
-                    print('start time:', start_time)
-                    main = Main(False, max_count=max_count)
-                    main.run()
-                    end_time = time.time()
-                    print('end time:', end_time)
-                    execution_time = end_time - start_time
-                    print('successfully scrap and save data in spreadsheet')
-                    print(f"Execution time: {execution_time:.2f} seconds")
-                    break
-
-                except ValueError:
-                    print("Error: please enter an integer")
-
+            multiple_product_scrap()
         else:
             print("Invalid input. Please enter 'y' or 'n'.")
