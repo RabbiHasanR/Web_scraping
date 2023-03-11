@@ -52,6 +52,15 @@ This project is a web scraper that uses Selenium, Python, BeautifulSoup, and Chr
     * Reviewer ID
 * List Of Keywords
 
+# File Structure
+
+* `main/webscraper.py` handle selenium.
+* `main/navigation_page.py` scrap [https://shop.adidas.jp/men/](https://shop.adidas.jp/men/)
+* `main/products_page.py` scrap list of products detail page links
+* `main/util.py` some util method for using collect data.
+* `main/product_details_page.py` collect product details page data.
+* `main/main.py` run scraper
+
 # Challenges Facing
 
 * When scraping multiple url concurrently it takes too much time.
