@@ -117,7 +117,7 @@ if __name__ == '__main__':
         answer = input("Do you want to scrap single product info? (y/n): ")
         if answer.lower() == 'y':
             while True:
-                url = input("Enter a URL: ")
+                url = input("Enter a URL(product deatil page): ")
                 parsed_url = urlparse(url)
                 if parsed_url.scheme and parsed_url.netloc:
                     start_time = time.time()

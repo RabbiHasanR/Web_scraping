@@ -51,3 +51,49 @@ This project is a web scraper that uses Selenium, Python, BeautifulSoup, and Chr
     * Review Description
     * Reviewer ID
 * List Of Keywords
+
+# Challenges Facing
+
+* When scraping multiple url concurrently it takes too much time.
+* If the internet is slow, then clicking doesn't work and the full page doesn't load properly.
+* Without open selenium chrome browser sometimes the full page doesn't load properly and clicks don't work.
+
+# Prerequisites
+
+Before running this program, you need to have the following tools and libraries installed:
+
+* Python 3.11.2
+* Selenium 4.8.2
+* BeautifulSoup 4.11.2
+* Chromium 111.0.5563.64
+* Pandas 1.5.3
+* webdriver-manager 3.8.5
+
+To install the required libraries, run the following commands in your terminal:
+```console
+    pip install -r requirments.txt  
+```
+
+# Running the Program
+
+To run the program, execute the following command in your terminal:
+```console
+    cd main
+    python main.py
+    Do you want to scrap single product info? (y/n):
+```
+If Y:
+```console
+    Enter a URL(product deatil page):
+```
+If N:
+```console
+    Enter an max count:
+```
+
+This will launch the web scraper, which will open up a Chromium window and navigate to the specified URL. The program will then use BeautifulSoup to extract data from the page, and Selenium to interact with the web page (e.g. clicking buttons, scrolling webpage etc.). Finally, the data will be saved to a CSV file in the `main/products_scrap_data.xlsx` file.
+
+
+
+
+
