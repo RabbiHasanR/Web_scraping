@@ -23,8 +23,9 @@ from selenium.webdriver.common.keys import Keys
 
 class ProductDetailPage:
 
-    def __init__(self, soup) -> None:
-        self.soup = soup
+    def __init__(self, item) -> None:
+        self.soup = item['soup']
+        self.item = item
         self.url = 'https://shop.adidas.jp/'
 
     
@@ -240,9 +241,11 @@ class ProductDetailPage:
     
     def get_all_data(self):
         data = {}
+        data['url'] = self.item['url']
         data['breadcrumb_category'] = self.get_breadcrumb_category()
         data['product_images_urls'] = self.get_product_images_urls()
         data['product_info'] = self.get_product_info()
+        data['cordinate_products'] = self.item['cordinate_products']
         data['description'] = self.get_description()
         data['special_functions'] = self.get_special_function()
         data['size_chart'] = self.get_size_chart()
@@ -393,11 +396,9 @@ async def get_multiple_pagesources():
 
 async def scrape_file(item):
     soup = BeautifulSoup(item['pagesource'], 'html.parser')
-    product_deatil_page = ProductDetailPage(soup)
+    item['soup'] = soup
+    product_deatil_page = ProductDetailPage(item)
     result = product_deatil_page.get_all_data()
-    # print('result:', result)
-    result['url'] = item['url']
-    result['cordinate_products'] = item['cordinate_products']
     return result
 
 async def scrape_files(items):
