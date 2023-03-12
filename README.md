@@ -100,7 +100,7 @@ If N:
     Enter an max count:
 ```
 
-This will launch the web scraper, which will open up a Chromium window and navigate to the specified URL. The program will then use BeautifulSoup to extract data from the page, and Selenium to interact with the web page (e.g. clicking buttons, scrolling webpage etc.). Finally, the data will be saved to a CSV file in the `main/products_scrap_data.xlsx` file.
+This will launch the web scraper, which will open up a Chromium window and navigate to the specified URL. The program will then use BeautifulSoup to extract data from the page, and Selenium to interact with the web page (e.g. clicking buttons, scrolling webpage etc.). Finally, the data will be saved to a CSV file in the `products_scrap_data.xlsx` file.
 
 
 
