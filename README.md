@@ -80,6 +80,8 @@ Before running this program, you need to have the following tools and libraries 
 
 To install the required libraries, run the following commands in your terminal:
 ```console
+    virtualenv scrap_env  
+    source scrap_env/bin/activate    
     pip install -r requirments.txt  
 ```
 
